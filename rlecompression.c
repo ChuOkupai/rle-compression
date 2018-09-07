@@ -7,11 +7,21 @@
 // Sinon incompressible : len
 // fprintf(f, );
 
+void printc(char c)
+{
+	if (c == '\n')
+		printf("\\n");
+	else if (c == EOF)
+		printf("'EOF'");
+	else
+		printf("%c", c);
+}
+
 int rlecompress(const char *inputfile, const char *outputfile)
 {
 	FILE *inputf = 0, *outputf = 0;
-	uint8_t c, len;
-	int compressible, i, j;
+	uint8_t n;
+	int i, j;
 	
 	inputf = fopen(inputfile, "r");
 	if (! inputf)
@@ -23,94 +33,60 @@ int rlecompress(const char *inputfile, const char *outputfile)
 		return 1;
 	}
 	i = fgetc(inputf);
-	while (i != EOF)
+	j = fgetc(inputf);
+	printc(i);printc(j);
+	if (j == EOF)
 	{
-		len = 0;
-		j = fgetc(inputf);
-		compressible = (i == j) ? 1 : 0;
-		if (compressible)
+		printf("[%d%c\\n]", 0, i);
+	}
+	while (j != EOF)
+	{
+		n = 0;
+		if (i == j)
 		{
-			while (j && len < 128)
+			while (i == j && n < 127)
 			{
-				if (i != j)
-				{
-					len += 127;
-					printf("c=%hd ", len);
-					fwrite(&len, 1, sizeof(uint8_t), outputf);
-					c = i;
-					printf("v=%hd\n", c);
-					fwrite(&c, 1, sizeof(uint8_t), outputf);
-					i = j;
-					j = 0;
-				}
-				else
-					j = fgetc(inputf);
-				len++;
+				j = fgetc(inputf);printc(j);
+				n++;
 			}
+			n += 128;
+			printf("[%d%c]", n, i);
 		}
 		else
 		{
-			printf("j=%hd ", j);
-			while (j != EOF && len < 128)
+			while (j != EOF && i != j && n < 127)
 			{
-				if (i == j)
-				{
-					printf("SEEK_CUR=%ld\n", ftell(inputf));
-					/*fseek(inputf, len, SEEK_SET);
-					fwrite(&len, 1, sizeof(uint8_t), outputf);
-					c = i;
-					printf("v=%hd\n", c);
-					fwrite(&c, 1, sizeof(uint8_t), outputf);
-					i = j;
-					j = EOF;*/
-				}
-				else
-				{
-					i = j;
-					j = fgetc(inputf);
-					printf("j=%hd ", j);
-				}
-				len++;
+				j = fgetc(inputf);printc(j);
+				n++;
 			}
+			if (j == EOF)
+			{
+				fseek(inputf, -2, SEEK_CUR);
+				i = fgetc(inputf);printc(i);
+				printf("[%d%c\\n]", n, i);
+			}
+			else
+				printf("[%d%c]", n, i);
 		}
-		i = fgetc(inputf);
+		if (j != EOF)
+		{
+			i = j;printc(j);
+			j = fgetc(inputf);
+			printc(j);
+		}
 	}
+	if (j == EOF)
+		printf("'j EOF'");
 	printf("\n");
 	if (fclose(inputf) || fclose(outputf))
 		return 1;
 	return 0;
 }
 
-int uint8convert(const char *inputfile, const char *outputfile)
+int main(int argc, char **argv)
 {
-	FILE *inputf = 0, *outputf = 0;
-	uint8_t c;
-	int i;
-	
-	inputf = fopen(inputfile, "r");
-	if (! inputf)
-		return 1;
-	outputf = fopen(outputfile, "w");
-	if (! outputf)
-	{
-		fclose(inputf);
-		return 1;
-	}
-	i = fgetc(inputf);
-	while (i != EOF)
-	{
-		c = i;
-		printf("%hd ", c);
-		fwrite(&c, 1, sizeof(uint8_t), outputf);
-		i = fgetc(inputf);
-	}
-	printf("\n");
-	if (fclose(inputf) || fclose(outputf))
-		return 1;
-	return 0;
-}
-
-int main(void)
-{
-	return (rlecompress("a", "a.rle")) ? 1 : 0;
+	if (argc > 1)
+		return (rlecompress(argv[1], "rlefile")) ? 1 : 0;
+	else
+		return 2;
 }
