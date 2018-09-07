@@ -2,26 +2,11 @@
 #include <stdint.h>
 #include <unistd.h>
 
-// len_max = 128
-// Si compressible : len + 127
-// Sinon incompressible : len
-// fprintf(f, );
-
-void printc(char c)
-{
-	if (c == '\n')
-		printf("\\n");
-	else if (c == EOF)
-		printf("'EOF'");
-	else
-		printf("%c", c);
-}
-
 int rlecompress(const char *inputfile, const char *outputfile)
 {
 	FILE *inputf = 0, *outputf = 0;
 	uint8_t n;
-	int i, j;
+	int neof, i, j;
 	
 	inputf = fopen(inputfile, "r");
 	if (! inputf)
@@ -34,11 +19,7 @@ int rlecompress(const char *inputfile, const char *outputfile)
 	}
 	i = fgetc(inputf);
 	j = fgetc(inputf);
-	if (j == EOF)
-	{
-		printf("0%c", i);
-	}
-	while (1)
+	while (i != EOF)
 	{
 		n = 0;
 		if (i == j)
@@ -61,29 +42,20 @@ int rlecompress(const char *inputfile, const char *outputfile)
 				j = fgetc(inputf);
 				n++;
 			}
-			if (j == EOF)
-			{
+			neof = (j == EOF) ? 0 : 2;
+			if (! neof)
 				n++;
-				fseek(inputf, -n, SEEK_CUR);
-				printf("%d", n - 1);
-				for (i = 0; i < n; i++)
-				{
-					j = fgetc(inputf);
-					printf("%c", j);
-				}
-				break;
-			}
-			else
+			fseek(inputf, -n - neof, SEEK_CUR);
+			printf("%d", n - 1);
+			for (i = 0; i < n; i++)
 			{
-				fseek(inputf, -n -2, SEEK_CUR);
-				printf("%d", n - 1);
-				for (i = 0; i < n; i++)
-				{
-					j = fgetc(inputf);
-					printc(j);
-				}
 				j = fgetc(inputf);
+				printf("%c", j);
 			}
+			if (neof)
+				j = fgetc(inputf);
+			else
+				break;
 		}
 		i = j;
 		j = fgetc(inputf);
