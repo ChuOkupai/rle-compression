@@ -38,7 +38,7 @@ int rlecompress(const char *inputfile, const char *outputfile)
 	{
 		printf("0%c", i);
 	}
-	while (j != EOF)
+	while (1)
 	{
 		n = 0;
 		if (i == j)
@@ -50,13 +50,15 @@ int rlecompress(const char *inputfile, const char *outputfile)
 			}
 			n += 128;
 			printf("%d%c", n, i);
+			if (j == EOF)
+				break;
 		}
 		else
 		{
 			while (j != EOF && i != j && n < 127)
 			{
 				i = j;
-				j = fgetc(inputf);//printc(j);
+				j = fgetc(inputf);
 				n++;
 			}
 			if (j == EOF)
@@ -69,10 +71,10 @@ int rlecompress(const char *inputfile, const char *outputfile)
 					j = fgetc(inputf);
 					printf("%c", j);
 				}
+				break;
 			}
 			else
 			{
-				//printf("[n=%d, cur=%ld]", n, ftell(inputf));
 				fseek(inputf, -n -2, SEEK_CUR);
 				printf("%d", n - 1);
 				for (i = 0; i < n; i++)
