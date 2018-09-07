@@ -34,10 +34,9 @@ int rlecompress(const char *inputfile, const char *outputfile)
 	}
 	i = fgetc(inputf);
 	j = fgetc(inputf);
-	printc(i);printc(j);
 	if (j == EOF)
 	{
-		printf("[%d%c\\n]", 0, i);
+		printf("0%c", i);
 	}
 	while (j != EOF)
 	{
@@ -46,37 +45,47 @@ int rlecompress(const char *inputfile, const char *outputfile)
 		{
 			while (i == j && n < 127)
 			{
-				j = fgetc(inputf);printc(j);
+				j = fgetc(inputf);
 				n++;
 			}
 			n += 128;
-			printf("[%d%c]", n, i);
+			printf("%d%c", n, i);
 		}
 		else
 		{
 			while (j != EOF && i != j && n < 127)
 			{
-				j = fgetc(inputf);printc(j);
+				i = j;
+				j = fgetc(inputf);//printc(j);
 				n++;
 			}
 			if (j == EOF)
 			{
-				fseek(inputf, -2, SEEK_CUR);
-				i = fgetc(inputf);printc(i);
-				printf("[%d%c\\n]", n, i);
+				n++;
+				fseek(inputf, -n, SEEK_CUR);
+				printf("%d", n - 1);
+				for (i = 0; i < n; i++)
+				{
+					j = fgetc(inputf);
+					printf("%c", j);
+				}
 			}
 			else
-				printf("[%d%c]", n, i);
+			{
+				//printf("[n=%d, cur=%ld]", n, ftell(inputf));
+				fseek(inputf, -n -2, SEEK_CUR);
+				printf("%d", n - 1);
+				for (i = 0; i < n; i++)
+				{
+					j = fgetc(inputf);
+					printc(j);
+				}
+				j = fgetc(inputf);
+			}
 		}
-		if (j != EOF)
-		{
-			i = j;printc(j);
-			j = fgetc(inputf);
-			printc(j);
-		}
+		i = j;
+		j = fgetc(inputf);
 	}
-	if (j == EOF)
-		printf("'j EOF'");
 	printf("\n");
 	if (fclose(inputf) || fclose(outputf))
 		return 1;
