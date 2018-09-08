@@ -1,12 +1,12 @@
 #include <stdio.h>
 #include <stdint.h>
+#include <string.h>
 #include <unistd.h>
 
 int rlecompress(const char *inputfile, const char *outputfile)
 {
 	FILE *inputf = 0, *outputf = 0;
-	uint8_t n;
-	int neof, i, j;
+	signed char neof, i, j, n;
 	
 	inputf = fopen(inputfile, "r");
 	if (! inputf)
@@ -30,7 +30,8 @@ int rlecompress(const char *inputfile, const char *outputfile)
 				n++;
 			}
 			n += 128;
-			printf("%d%c", n, i);
+			fwrite(&n, 1, sizeof(signed char), outputf);
+			fwrite(&i, 1, sizeof(signed char), outputf);
 			if (j == EOF)
 				break;
 		}
@@ -46,11 +47,13 @@ int rlecompress(const char *inputfile, const char *outputfile)
 			if (! neof)
 				n++;
 			fseek(inputf, -n - neof, SEEK_CUR);
-			printf("%d", n - 1);
+			n--;
+			fwrite(&n, 1, sizeof(signed char), outputf);
+			n++;
 			for (i = 0; i < n; i++)
 			{
 				j = fgetc(inputf);
-				printf("%c", j);
+				fwrite(&j, 1, sizeof(signed char), outputf);
 			}
 			if (neof)
 				j = fgetc(inputf);
@@ -60,7 +63,52 @@ int rlecompress(const char *inputfile, const char *outputfile)
 		i = j;
 		j = fgetc(inputf);
 	}
-	printf("\n");
+	if (fclose(inputf) || fclose(outputf))
+		return 1;
+	return 0;
+}
+
+int rleextract(const char *inputfile, const char *outputfile)
+{
+	FILE *inputf = 0, *outputf = 0;
+	uint8_t n;
+	signed char i, j;
+	
+	inputf = fopen(inputfile, "r");
+	if (! inputf)
+		return 1;
+	outputf = fopen(outputfile, "w");
+	if (! outputf)
+	{
+		fclose(inputf);
+		return 1;
+	}
+	while (1)
+	{
+		fread(&i, sizeof(uint8_t), 1, inputf);
+		printf("i=%d\n", i);break;
+		/*if (i < 127)
+		{
+			n = i + 1;
+			for (i = 0; i < n; i++)
+			{
+				j = fgetc(inputf);
+				if (j == EOF)
+					break;
+				else
+					fwrite(&j, 1, sizeof(char), outputf);
+			}
+		}
+		else
+		{
+			n = i - 127;
+			j = fgetc(inputf);
+			if (j == EOF)
+					break;
+			for (i = 0; i < n; i++)
+				fwrite(&j, 1, sizeof(char), outputf);
+		}*/
+	}
 	if (fclose(inputf) || fclose(outputf))
 		return 1;
 	return 0;
@@ -68,8 +116,15 @@ int rlecompress(const char *inputfile, const char *outputfile)
 
 int main(int argc, char **argv)
 {
-	if (argc > 1)
-		return (rlecompress(argv[1], "rlefile")) ? 1 : 0;
+	if (argc > 3)
+	{
+		if (! (strcmp(argv[1], "-compress") && strcmp(argv[1], "-c"))){printf("compress\n");
+			return (rlecompress(argv[2], argv[3])) ? 1 : 0;}
+		else if (! (strcmp(argv[1], "-extract") && strcmp(argv[1], "-e")))
+			return (rleextract(argv[2], argv[3])) ? 1 : 0;
+		else
+			return 2;
+	}
 	else
 		return 2;
 }
