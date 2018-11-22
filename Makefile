@@ -1,10 +1,11 @@
 CC=gcc
-CFLAGS=-O3 -Wall -Wextra
-
-all: clean main
+CFLAGS=-O3 -Wall -Wextra -Werror
 
 clean:
-	sudo rm -f *.rle *.out
+	rm -f *.rle *.out
 
-main:
-	$(CC) $(CFLAGS) rlecompression.c -o mkrle.out
+run: mkrle.out
+	./$<
+
+mkrle.out: rlecompression.c
+	$(CC) $(CFLAGS) $< -o $@

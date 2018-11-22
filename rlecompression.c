@@ -3,6 +3,16 @@
 #include <string.h>
 #include <unistd.h>
 
+#define ERR_ARG		-1
+#define ERR_DST		-2
+#define ERR_LOAD	-4
+#define ERR_WRITE	-8
+int err;
+
+#define ARG_COMPRESS	1
+#define ARG_EXTRACT		2
+int	arg;
+
 int rlecompress(const char *inputfile, const char *outputfile)
 {
 	FILE *inputf = 0, *outputf = 0;
@@ -11,12 +21,12 @@ int rlecompress(const char *inputfile, const char *outputfile)
 	
 	inputf = fopen(inputfile, "r");
 	if (! inputf)
-		return 1;
+		return ERR_LOAD;
 	outputf = fopen(outputfile, "wb");
 	if (! outputf)
 	{
 		fclose(inputf);
-		return 1;
+		return ERR_WRITE;
 	}
 	i = fgetc(inputf);
 	j = fgetc(inputf);
@@ -64,8 +74,8 @@ int rlecompress(const char *inputfile, const char *outputfile)
 		i = j;
 		j = fgetc(inputf);
 	}
-	if (fclose(inputf) || fclose(outputf))
-		return 1;
+	fclose(inputf);
+	fclose(outputf);
 	return 0;
 }
 
@@ -77,12 +87,12 @@ int rleextract(const char *inputfile, const char *outputfile)
 	
 	inputf = fopen(inputfile, "rb");
 	if (! inputf)
-		return 1;
+		return ERR_LOAD;
 	outputf = fopen(outputfile, "w");
 	if (! outputf)
 	{
 		fclose(inputf);
-		return 1;
+		return ERR_WRITE;
 	}
 	n = 0;
 	i = 0;
@@ -111,31 +121,87 @@ int rleextract(const char *inputfile, const char *outputfile)
 				fwrite(&i, 1, sizeof(i), outputf);
 		}
 	}
-	if (fclose(inputf) || fclose(outputf))
-		return 1;
+	fclose(inputf);
+	fclose(outputf);
 	return 0;
 }
 
-int rletest(char *input)
+int _missing(char *bin)
 {
-	if (rlecompress(input, "test.rle"))
-		return 1;
-	return rleextract("test.rle", "test");
+	printf("%s: missing file operand\n", bin);
+	printf("Try '%s --help' for more information\n", bin);
+	return 0;
+}
+
+int _help(char *bin)
+{
+	printf("usage: %s [-c | -e] source target...\n", bin);
+	printf("Compress or extract source to target\n");
+	return 0;
+}
+
+void	_error(char *bin, char *argument)
+{
+	if (! err)
+		return;
+	printf("%s: %s: ", bin, argument);
+	if (err == ERR_ARG)
+		puts("Illegal option");
+	else if (err == ERR_DST)
+		puts("Missing target file");
+	else if (err == ERR_LOAD)
+		puts("No such file or directory");
+	else // err == ERR_WRITE
+		puts("Could not write file");
+}
+
+void	_argument(char *s)
+{
+	while (! err && *++s)
+		if (*s == 'c')
+			arg = ARG_COMPRESS;
+		else if (*s == 'e')
+			arg = ARG_EXTRACT;
+		else
+			err = ERR_ARG;
 }
 
 int main(int argc, char **argv)
 {
-	if (argc > 2)
+	if (argc < 2)
+		return _missing(argv[0]);
+	int i, j;
+
+	for (i = 1; i < argc; i++)
+		if (! strcmp(argv[i], "--help"))
+			return _help(argv[0]);
+	arg = ARG_EXTRACT;
+	j = 0;
+	for (i = 1; i < argc; i++)
 	{
-		if (! (strcmp(argv[1], "-test") && strcmp(argv[1], "-t")))
-			return rletest(argv[2]);
-		else if (argc > 3)
+		err = 0;
+		if (argv[i][0] ==  '-')
+			_argument(argv[i]);
+		else
 		{
-			if (! (strcmp(argv[1], "-compress") && strcmp(argv[1], "-c")))
-				return rlecompress(argv[2], argv[3]);
-			else if (! (strcmp(argv[1], "-extract") && strcmp(argv[1], "-e")))
-				return rleextract(argv[2], argv[3]);
+			if (i + 1 == argc)
+				err = ERR_DST;
+			else
+			{
+				if (arg == ARG_COMPRESS)
+					err = rlecompress(argv[i], argv[i + 1]);
+				else // arg == ARG_EXTRACT
+					err = rleextract(argv[i], argv[i + 1]);
+				if (err)
+				{
+					_error(argv[0], argv[i]);
+					err = 0;
+				}
+				i++;
+			}
 		}
+		if (err)
+			_error(argv[0], argv[i]);
 	}
-	return 2;
+	return 0;
 }
