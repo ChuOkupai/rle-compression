@@ -100,17 +100,12 @@ int rleextract(const char *inputfile, const char *outputfile)
 	{
 		if (fread(&n, sizeof(n), 1, inputf) != 1)
 			break;
-		i = fgetc(inputf);
-		if (i == EOF)
-			break;
 		repeat = (n < 127) ? 0 : 1;
-		if (! repeat)
-			fwrite(&i, 1, sizeof(i), outputf);
-		else
-			n -= 127;
-		for (j = 0; j < n; j++)
+		if (repeat)
+			n -= 128;
+		for (j = 0; j <= n; j++)
 		{
-			if (! repeat)
+			if (! (repeat && j))
 			{
 				i = fgetc(inputf);
 				if (i == EOF)
