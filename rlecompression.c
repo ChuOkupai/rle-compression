@@ -83,7 +83,7 @@ int rleextract(const char *inputfile, const char *outputfile)
 {
 	FILE *inputf = 0, *outputf = 0;
 	uint8_t n;
-	char i, j;
+	char i, j, repeat;
 	
 	inputf = fopen(inputfile, "rb");
 	if (! inputf)
@@ -103,22 +103,20 @@ int rleextract(const char *inputfile, const char *outputfile)
 		i = fgetc(inputf);
 		if (i == EOF)
 			break;
-		if (n < 127)
-		{
+		repeat = (n < 127) ? 0 : 1;
+		if (! repeat)
 			fwrite(&i, 1, sizeof(i), outputf);
-			for (j = 0; j < n; j++)
+		else
+			n -= 127;
+		for (j = 0; j < n; j++)
+		{
+			if (! repeat)
 			{
 				i = fgetc(inputf);
 				if (i == EOF)
 					break;
-				fwrite(&i, 1, sizeof(i), outputf);
 			}
-		}
-		else
-		{
-			n -= 127;
-			for (j = 0; j < n; j++)
-				fwrite(&i, 1, sizeof(i), outputf);
+			fwrite(&i, 1, sizeof(i), outputf);
 		}
 	}
 	fclose(inputf);
