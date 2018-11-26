@@ -16,8 +16,8 @@ int	arg;
 int rlecompress(const char *inputfile, const char *outputfile)
 {
 	FILE *inputf = 0, *outputf = 0;
-	uint8_t n;
-	char neof, i, j;
+	uint8_t	n;
+	char	neof, i, j;
 	
 	inputf = fopen(inputfile, "r");
 	if (! inputf)
@@ -82,8 +82,8 @@ int rlecompress(const char *inputfile, const char *outputfile)
 int rleextract(const char *inputfile, const char *outputfile)
 {
 	FILE *inputf = 0, *outputf = 0;
-	uint8_t n;
-	char i, j, repeat;
+	uint8_t	n;
+	char	i, j, repeat;
 	
 	inputf = fopen(inputfile, "rb");
 	if (! inputf)
