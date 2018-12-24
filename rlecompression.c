@@ -13,23 +13,23 @@ int err;
 #define ARG_EXTRACT		2
 int	arg;
 
-int rlecompress(const char *inputfile, const char *outputfile)
+int rleCompress(const char *source, const char *destination)
 {
-	FILE *inputf = 0, *outputf = 0;
+	FILE *input = 0, *output = 0;
 	uint8_t	n;
 	char	neof, i, j;
 	
-	inputf = fopen(inputfile, "r");
-	if (! inputf)
+	input = fopen(source, "r");
+	if (! input)
 		return ERR_LOAD;
-	outputf = fopen(outputfile, "wb");
-	if (! outputf)
+	output = fopen(destination, "wb");
+	if (! output)
 	{
-		fclose(inputf);
+		fclose(input);
 		return ERR_WRITE;
 	}
-	i = fgetc(inputf);
-	j = fgetc(inputf);
+	i = fgetc(input);
+	j = fgetc(input);
 	while (i != EOF)
 	{
 		n = 0;
@@ -37,12 +37,12 @@ int rlecompress(const char *inputfile, const char *outputfile)
 		{
 			while (i == j && n < 127)
 			{
-				j = fgetc(inputf);
+				j = fgetc(input);
 				n++;
 			}
 			n += 128;
-			fwrite(&n, 1, sizeof(n), outputf);
-			fwrite(&i, 1, sizeof(i), outputf);
+			fwrite(&n, 1, sizeof(n), output);
+			fwrite(&i, 1, sizeof(i), output);
 			if (j == EOF)
 				break;
 		}
@@ -51,54 +51,54 @@ int rlecompress(const char *inputfile, const char *outputfile)
 			while (j != EOF && i != j && n < 127)
 			{
 				i = j;
-				j = fgetc(inputf);
+				j = fgetc(input);
 				n++;
 			}
 			neof = (j == EOF) ? 0 : 2;
 			if (! neof)
 				n++;
-			fseek(inputf, -n - neof, SEEK_CUR);
+			fseek(input, -n - neof, SEEK_CUR);
 			n--;
-			fwrite(&n, 1, sizeof(n), outputf);
+			fwrite(&n, 1, sizeof(n), output);
 			n++;
 			for (i = 0; i < n; i++)
 			{
-				j = fgetc(inputf);
-				fwrite(&j, 1, sizeof(j), outputf);
+				j = fgetc(input);
+				fwrite(&j, 1, sizeof(j), output);
 			}
 			if (neof)
-				j = fgetc(inputf);
+				j = fgetc(input);
 			else
 				break;
 		}
 		i = j;
-		j = fgetc(inputf);
+		j = fgetc(input);
 	}
-	fclose(inputf);
-	fclose(outputf);
+	fclose(input);
+	fclose(output);
 	return 0;
 }
 
-int rleextract(const char *inputfile, const char *outputfile)
+int rleExtract(const char *source, const char *destination)
 {
-	FILE *inputf = 0, *outputf = 0;
+	FILE *input = 0, *output = 0;
 	uint8_t	n;
 	char	i, j, repeat;
 	
-	inputf = fopen(inputfile, "rb");
-	if (! inputf)
+	input = fopen(source, "rb");
+	if (! input)
 		return ERR_LOAD;
-	outputf = fopen(outputfile, "w");
-	if (! outputf)
+	output = fopen(destination, "w");
+	if (! output)
 	{
-		fclose(inputf);
+		fclose(input);
 		return ERR_WRITE;
 	}
 	n = 0;
 	i = 0;
 	while (i != EOF)
 	{
-		if (fread(&n, sizeof(n), 1, inputf) != 1)
+		if (fread(&n, sizeof(n), 1, input) != 1)
 			break;
 		repeat = (n < 127) ? 0 : 1;
 		if (repeat)
@@ -107,15 +107,15 @@ int rleextract(const char *inputfile, const char *outputfile)
 		{
 			if (! (repeat && j))
 			{
-				i = fgetc(inputf);
+				i = fgetc(input);
 				if (i == EOF)
 					break;
 			}
-			fwrite(&i, 1, sizeof(i), outputf);
+			fwrite(&i, 1, sizeof(i), output);
 		}
 	}
-	fclose(inputf);
-	fclose(outputf);
+	fclose(input);
+	fclose(output);
 	return 0;
 }
 
@@ -182,9 +182,9 @@ int main(int argc, char **argv)
 			if (i + 1 == argc)
 				err = ERR_DST;
 			else if (arg == ARG_COMPRESS)
-				err = rlecompress(argv[i], argv[i + 1]);
+				err = rleCompress(argv[i], argv[i + 1]);
 			else // arg == ARG_EXTRACT
-				err = rleextract(argv[i], argv[i + 1]);
+				err = rleExtract(argv[i], argv[i + 1]);
 		}
 		if (err)
 			_error(argv[0], argv[i]);
