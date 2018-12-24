@@ -121,7 +121,7 @@ int rleextract(const char *inputfile, const char *outputfile)
 
 int _missing(char *bin)
 {
-	printf("%s: missing file operand\n", bin);
+	printf("%s: Missing file operand\n", bin);
 	printf("Try '%s --help' for more information\n", bin);
 	return 0;
 }
@@ -170,34 +170,26 @@ int main(int argc, char **argv)
 			return _help(argv[0]);
 	arg = ARG_EXTRACT;
 	j = 0;
-	source = 0;
 	for (i = 1; i < argc; i++)
 	{
 		err = 0;
+		source = 0;
 		if (argv[i][0] ==  '-')
 			_argument(argv[i]);
 		else
 		{
+			source = 1;
 			if (i + 1 == argc)
 				err = ERR_DST;
-			else
-			{
-				if (arg == ARG_COMPRESS)
-					err = rlecompress(argv[i], argv[i + 1]);
-				else // arg == ARG_EXTRACT
-					err = rleextract(argv[i], argv[i + 1]);
-				if (err)
-				{
-					_error(argv[0], argv[i]);
-					err = 0;
-				}
-				else
-					source = 1;
-				i++;
-			}
+			else if (arg == ARG_COMPRESS)
+				err = rlecompress(argv[i], argv[i + 1]);
+			else // arg == ARG_EXTRACT
+				err = rleextract(argv[i], argv[i + 1]);
 		}
 		if (err)
 			_error(argv[0], argv[i]);
+		if (source)
+			i++;
 	}
 	if (! source)
 		_missing(argv[0]);
