@@ -185,13 +185,12 @@ int main(int argc, char **argv)
 {
 	if (argc < 2)
 		return _missing(argv[0]);
-	int i, j, source;
+	int i, source;
 
 	for (i = 1; i < argc; i++)
 		if (! strcmp(argv[i], "--help"))
 			return _help(argv[0]);
 	arg = ARG_EXTRACT;
-	j = 0;
 	for (i = 1; i < argc; i++)
 	{
 		err = 0;
