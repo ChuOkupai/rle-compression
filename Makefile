@@ -1,11 +1,16 @@
-CC=gcc
-CFLAGS=-O3 -Wall -Wextra -Werror
+CC= gcc
+CFLAGS= -Wall -Wextra -Werror -Ofast
+
+all: rle
+	./$<
 
 clean:
-	rm -f *.rle *.out
+	rm -f rle.o rle
 
-rle.out: rlecompression.c
-	$(CC) $(CFLAGS) $< -o $@
+re: clean all
 
-run: rle.out
-	./$<
+rle.o: src/rle.c
+	$(CC) $(CFLAGS) -c $<
+
+rle: src/main.c rle.o inc/rle.h
+	$(CC) $(CFLAGS) -I./inc $< rle.o -o $@
