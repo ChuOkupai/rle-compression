@@ -14,9 +14,9 @@ That's it!
 I want to compress the file named *foo.txt*.  
 So, I just have to type:
 ```bash
-./rle.out -c foo.txt foo.rle
+./rle -c foo.txt foo.rle
 ```
 In order to be extracted, I'll have to type:
 ```bash
-./rle.out -e foo.rle foo.old
+./rle -e foo.rle foo.old
 ```
