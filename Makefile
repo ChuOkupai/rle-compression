@@ -1,16 +1,18 @@
-CC= gcc
-CFLAGS= -Wall -Wextra -Werror -Ofast
+CC		= gcc
+CFLAGS	= -Wall -Wextra -Werror -Ofast
+OBJ		= rle.o
+BIN		= rle
 
 all: rle
 	./$<
 
 clean:
-	rm -f rle.o rle
+	rm -f $(OBJ) rle
 
 re: clean all
 
-rle.o: src/rle.c
+%.o: src/%.c
 	$(CC) $(CFLAGS) -c $<
 
-rle: src/main.c rle.o inc/rle.h
-	$(CC) $(CFLAGS) -I./inc $< rle.o -o $@
+$(BIN): src/main.c $(OBJ) inc/rle.h
+	$(CC) $(CFLAGS) -I./inc $< $(OBJ) -o $@

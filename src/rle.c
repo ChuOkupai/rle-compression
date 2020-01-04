@@ -1,100 +1,86 @@
+#include <errno.h>
 #include <stdio.h>
 #include <stdint.h>
 #include <unistd.h>
 
-int	fopen_error(FILE *f1, FILE *f2)
+int rle_compress(const char *src, const char *dst)
 {
-	if (f1)
-		fclose(f1);
-	if (f2)
-		fclose(f2);
-	return (-1);
-}
-
-int rle_compress(const char *source, const char *destination)
-{
-	FILE 	*input = 0, *output = 0;
-	uint8_t	n;
-	char	neof, i, j;
+	FILE 	*in, *out;
+	uint8_t	t[128], n, max;
+	int		i, j, keep;
 	
-	input = fopen(source, "r");
-	output = fopen(destination, "wb");
-	if (! input || ! output)
-		return (fopen_error(input, output));
-	i = fgetc(input);
-	j = fgetc(input);
-	while (i != EOF)
+	if (!(in = fopen(src, "rb")))
+		return (-1);
+	if (!(out = fopen(dst, "wb")))
 	{
-		n = 0;
-		if (i == j)
-		{
-			while (i == j && n < 127)
-			{
-				j = fgetc(input);
-				n++;
-			}
-			n += 128;
-			fwrite(&n, 1, sizeof(n), output);
-			fwrite(&i, 1, sizeof(i), output);
-			if (j == EOF)
-				break;
-		}
+		fclose(in);
+		return (-1);
+	}
+
+	keep = 0;
+	j = fgetc(in);
+	while ((i = j) != EOF)
+	{
+		t[0] = (uint8_t)i;
+		if (keep)
+			keep = 0;
 		else
-		{
-			while (j != EOF && i != j && n < 127)
+			j = fgetc(in);
+		n = i == j ? 127 : 0;
+		while (i == j && ++n < 255)
+			j = fgetc(in);
+		if (!n)
+			while (i != j && j != EOF && n < 127)
 			{
+				t[++n] = (uint8_t)j;
 				i = j;
-				j = fgetc(input);
-				n++;
+				j = fgetc(in);
+				if (i == j)
+					keep = n--;
 			}
-			neof = (j == EOF) ? 0 : 2;
-			if (! neof)
-				n++;
-			fseek(input, -n - neof, SEEK_CUR);
-			n--;
-			fwrite(&n, 1, sizeof(n), output);
-			n++;
-			for (i = 0; i < n; i++)
-			{
-				j = fgetc(input);
-				fwrite(&j, 1, sizeof(j), output);
-			}
-			if (neof)
-				j = fgetc(input);
-			else
-				break;
-		}
-		i = j;
-		j = fgetc(input);
+		max = n < 128 ? n + 1 : 1;
+		if (fwrite(&n, sizeof(n), 1, out) < 1 ||
+			fwrite(t, sizeof(t[0]), max, out) < max)
+			break ;
 	}
-	fclose(input);
-	fclose(output);
-	return (0);
+	i = i != EOF || ferror(in) || ferror(out);
+
+	fclose(in);
+	fclose(out);
+	return (-i);
 }
 
-int rle_extract(const char *source, const char *destination)
+int rle_extract(const char *src, const char *dst)
 {
-	FILE 	*input = 0, *output = 0;
+	FILE 	*in, *out;
 	uint8_t	n;
-	char	i, j, repeat;
+	int		i, j, max;
 	
-	input = fopen(source, "rb");
-	output = fopen(destination, "w");
-	if (! input || ! output)
-		return (fopen_error(input, output));
-	n = 0;
-	i = 0;
-	while (i != EOF && fread(&n, sizeof(n), 1, input) == 1)
+	if (!(in = fopen(src, "rb")))
+		return (-1);
+	if (!(out = fopen(dst, "wb")))
 	{
-		if ((repeat = n >= 127))
-			n -= 128;
-		for (j = 0; j <= n; j++)
-			if (!(repeat && j) && (i = fgetc(input)) == EOF)
-				break;
-			else
-				fwrite(&i, 1, sizeof(i), output);
+		fclose(in);
+		return (-1);
 	}
-	fclose(input);
-	fclose(output);
-	return 0;
+
+	max = -1;
+	while (max < 0 && (i = fgetc(in)) != EOF && (j = fgetc(in)) != EOF)
+	{
+		max = i + (i < 128 ? 1 : -126);
+		while (max--)
+		{
+			n = (uint8_t)j;
+			if (fwrite(&n, sizeof(n), 1, out) < 1 ||
+				(i < 128 && max && (j = fgetc(in)) == EOF))
+				break ; // write error
+		}
+	}
+	if (max >= 0 || j == EOF)
+		errno = EBADMSG;
+	i = errno || i != EOF || ferror(in) || ferror(out);
+
+	fclose(in);
+	fclose(out);
+	return (-i);
 }
