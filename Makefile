@@ -1,18 +1,16 @@
 CC		= gcc
 CFLAGS	= -Wall -Wextra -Werror -Ofast
-OBJ		= rle.o
+SRC		= $(wildcard src/*.c)
+OBJ		= $(SRC:%.c=%.o)
 BIN		= rle
 
-all: rle
-	./$<
+$(BIN): $(OBJ)
+	$(CC) $(CFLAGS) -I./inc $(OBJ) -o $@
 
 clean:
-	rm -f $(OBJ) rle
+	rm -f $(OBJ) $(BIN)
 
-re: clean all
+re: clean $(BIN)
 
-%.o: src/%.c
-	$(CC) $(CFLAGS) -c $<
-
-$(BIN): src/main.c $(OBJ) inc/rle.h
-	$(CC) $(CFLAGS) -I./inc $< $(OBJ) -o $@
+src/%.o: src/%.c inc/rle.h
+	$(CC) $(CFLAGS) -I./inc -c $< -o $@
