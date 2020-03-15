@@ -4,63 +4,61 @@
 #include <string.h>
 #include "rle.h"
 
-static int	print_usage(char *bin)
-{
-	printf("Usage: %s [OPTION] SOURCE DEST\n", basename(bin));
-	return (0);
-}
+#define HELP_MSG \
+"Compress and extracts files using the RLE compression algorithm.\n\n" \
+"  -c             compress SOURCE to DEST\n" \
+"  -x             extract SOURCE to DEST\n" \
+"      --help     display this help and exit\n" \
+"      --version  output version information and exit\n"
+
+#define LICENSE_MSG \
+"Copyright (c) 2020 Adrien Soursou\n" \
+"License: MIT\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY " \
+"KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES " \
+"OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. " \
+"IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM" \
+", DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT " \
+"OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR " \
+"THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.\n\nWritten by Adrien Soursou.\n"
 
 static int	print_help(char *bin)
 {
-	print_usage(bin);
-	printf("Compress and extracts files using the RLE compression algorithm.\n\n");
-	printf("  -c             compress SOURCE to DEST\n");
-	printf("  -e             extract SOURCE to DEST\n");
-	printf("      --help     display this help and exit\n");
-	printf("      --version  output version information and exit\n");
+	printf("Usage: %s [OPTION] SOURCE DEST\n", bin);
+	printf(HELP_MSG);
 	return (0);
 }
 
 static int	print_version(char *bin)
 {
-	printf("%s 1.0\n", basename(bin));
-	printf("Copyright (c) 2020 Adrien Soursou\n");
-	printf("License: MIT\n");
-	printf("THE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\n");
-	printf("IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\n");
-	printf("FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\n");
-	printf("AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\n");
-	printf("LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\n");
-	printf("OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\n");
-	printf("SOFTWARE.\n");
-	printf("\nWritten by Adrien Soursou.\n");
+	printf("%s 1.1\n", bin);
+	printf(LICENSE_MSG);
 	return (0);
 }
 
-static int	print_error(char *bin, const char *message)
+static int	print_invalid(char *bin)
 {
-	bin = basename(bin);
-	printf("%s: %s\n", bin, message);
-	printf("Try '%s --help' for more information.\n", bin);
-	return (0);
+	fprintf(stderr, "%s: invalid option\n", bin);
+	fprintf(stderr, "Try '%s --help' for more information.\n", bin);
+	return (-1);
 }
 
 int			main(int ac, char **av)
 {
+	*av = basename(*av);
 	for (int i = 1; i < ac; i++)
 		if (!strcmp(av[i], "--help"))
-			return (print_help(*av));
+			return print_help(*av);
 		else if (!strcmp(av[i], "--version"))
-			return (print_version(*av));
+			return print_version(*av);
 	if (ac != 4)
-		return (print_usage(*av));
+		return print_invalid(*av);
 	if (!strcmp(av[1], "-c"))
 		rle_compress(av[2], av[3]);
-	else if (!strcmp(av[1], "-e"))
+	else if (!strcmp(av[1], "-x"))
 		rle_extract(av[2], av[3]);
 	else
-		return (print_error(*av, "invalid option"));
+		return print_invalid(*av);
 	if (errno)
-		print_error(*av, strerror(errno));
-	return (errno);
+		fprintf(stderr, "%s: %s\n", *av, strerror(errno));
+	return (-(errno != 0));
 }

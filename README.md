@@ -9,42 +9,53 @@ This implementation is a modified version of the algorithm to allow a better com
 Refer to the [Technical specifications](#technical-specifications) section for more information.
 
 # Documentation
-### Compile from source
+## Supported OS
+
+This software is officially compatible on both Linux and Mac.
+
+## Compile from source
 Use the following command:
 ```shell
 make
 ```
-or
+
+## Install
 ```shell
-make rle
+make install
 ```
 
-### Usage
+## Uninstall
 ```shell
-./rle [OPTION] SOURCE DEST
+make uninstall
+```
+
+## Usage
+```shell
+rle [OPTION] SOURCE DEST
 ```
 **Options list:**
 - **-c**
 compress SOURCE to DEST
-- **-e**
+- **-x**
 extract SOURCE to DEST
 - **--help**
 display help and exit
 - **--version**
 output version information and exit
 
-### Example
+## Example
 To compress the file named *foobar.txt*, the command will be:
 ```shell
-./rle -c foobar.txt foobar.rle
+rle -c foobar.txt foobar.rle
 ```
-Extract a rle file:
+Now let's extract this file:
 ```shell
-./rle -e foobar.rle foobar.old
+rle -x foobar.rle foobar.old
 ```
+*foobar.old* has the same content as *foobar.txt*.
 
 # Technical specifications
-### Description
+## Description
 The format used during compression is as follows:
 ```shell
 [128-255][byte]
@@ -58,7 +69,7 @@ The format used during compression is as follows:
 # The following n bytes contain the value
 ```
 
-### Examples
+## Examples
 ```shell
 # Exemple 1: "AAAA" which can be reduced to "4A"
 [130][A]

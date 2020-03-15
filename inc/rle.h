@@ -24,15 +24,15 @@
 # define RLE_H
 
 /*
- * Compress a file using the rqun-length encoding algorithm.
- * If successful, returns 0.
+ * Compress a file using the run-length encoding algorithm.
+ * If successful, it returns 0.
  * Returns -1 on failure, and sets errno to indicate the error.
  */
 int	rle_compress(const char *source_path, const char *destination_path);
 
 /*
- * Decompress a file using the rqun-length encoding algorithm.
- * If successful, returns 0.
+ * Decompress a file using the run-length encoding algorithm.
+ * If successful, it returns 0.
  * Returns -1 on failure, and sets errno to indicate the error.
  * If errno is set to EBADMSG, the given file is corrupted.
  */
